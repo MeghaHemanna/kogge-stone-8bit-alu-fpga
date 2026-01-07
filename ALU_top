@@ -1,0 +1,64 @@
+`timescale 1ns / 1ps
+module ALU_top(
+    input [7:0] A,
+    input [7:0] B,
+    input [3:0] ALU_opcode,
+    output reg [7:0] ALU_result,
+    output zero_flag,
+    output sign_flag,
+    output overflow_flag,
+    output carry_flag
+);
+
+    //Arithmetic
+    localparam ADD = 4'b0000, SUB = 4'b0001, INC = 4'b0010, DEC = 4'b0011;
+    //Logic
+    localparam AND = 4'b0100, OR  = 4'b0101, XOR = 4'b0110, NOT = 4'b0111;
+    //Shift / Rotate
+    localparam LS  = 4'b1000, RS  = 4'b1001, ARS = 4'b1010, ROL = 4'b1011, ROR = 4'b1100;
+    //Compare
+    localparam CMP = 4'b1101;
+
+    //Arithmetic unit
+    wire [7:0] arith_result;
+    wire arith_carry, arith_overflow;
+
+    arithmetic_unit AU (
+        .A(A), .B(B),
+        .arith_sel(ALU_opcode[1:0]),
+        .arith_result(arith_result),
+        .arith_carry(arith_carry),
+        .arith_overflow(arith_overflow)
+    );
+
+    //Logic unit
+    wire [7:0] logic_result;
+    logic_unit LU (.A(A), .B(B), .logic_sel(ALU_opcode[1:0]), .logic_result(logic_result));
+
+    //Shift unit
+    wire [7:0] shift_result;
+    shift_rotate_unit SRU (.A(A), .shift_sel(ALU_opcode[2:0]), .shift_result(shift_result));
+
+    //Comparator
+    wire eq, lt, gt;
+    signed_comparator CU (.A(A), .B(B), .eq(eq), .lt(lt), .gt(gt));
+    wire [7:0] cmp_result = eq ? 8'b00000001 : lt ? 8'b00000010 : 8'b00000100;
+
+    //Result MUX
+    always @(*) begin
+        case (ALU_opcode)
+            ADD, SUB, INC, DEC: ALU_result = arith_result;
+            AND, OR, XOR, NOT: ALU_result = logic_result;
+            LS, RS, ARS, ROL, ROR: ALU_result = shift_result;
+            CMP: ALU_result = cmp_result;
+            default: ALU_result = 8'b0;
+        endcase
+    end
+
+    //Flags
+    assign zero_flag = (ALU_result == 8'b0);
+    assign sign_flag = ALU_result[7];
+    assign overflow_flag = (ALU_opcode <= DEC) ? arith_overflow : 1'b0;
+    assign carry_flag = (ALU_opcode <= DEC) ? arith_carry    : 1'b0;
+
+endmodule
