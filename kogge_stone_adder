@@ -1,0 +1,68 @@
+`timescale 1ns / 1ps
+module kogge_stone_adder(
+    input  [7:0] A,
+    input  [7:0] B,
+    input        Cin,
+    output [7:0] Sum,
+    output       Cout
+);
+
+    wire [7:0] P0, G0;
+    wire [7:0] P1, G1;
+    wire [7:0] P2, G2;
+    wire [7:0] P3, G3;
+    wire [8:0] C;
+
+    //Pre-processing
+    assign P0 = A ^ B;
+    assign G0 = A & B;
+
+    //Stage 1
+    assign P1[0] = P0[0];
+    assign G1[0] = G0[0];
+    genvar i;
+    generate
+        for (i = 1; i < 8; i = i + 1) begin
+            assign P1[i] = P0[i] & P0[i-1];
+            assign G1[i] = G0[i] | (P0[i] & G0[i-1]);
+        end
+    endgenerate
+
+    //Stage 2
+    assign P2[1:0] = P1[1:0];
+    assign G2[1:0] = G1[1:0];
+    genvar j;
+    generate
+        for (j = 2; j < 8; j = j + 1) begin
+            assign P2[j] = P1[j] & P1[j-2];
+            assign G2[j] = G1[j] | (P1[j] & G1[j-2]);
+        end
+    endgenerate
+
+    //Stage 3
+    assign P3[3:0] = P2[3:0];
+    assign G3[3:0] = G2[3:0];
+    genvar k;
+    generate
+        for (k = 4; k < 8; k = k + 1) begin
+            assign P3[k] = P2[k] & P2[k-4];
+            assign G3[k] = G2[k] | (P2[k] & G2[k-4]);
+        end
+    endgenerate
+
+    // Carry generation
+    assign C[0] = Cin;
+    assign C[1] = G0[0] | (P0[0] & Cin);
+    assign C[2] = G1[1] | (P1[1] & Cin);
+    assign C[3] = G1[2] | (P1[2] & Cin);
+    assign C[4] = G2[3] | (P2[3] & Cin);
+    assign C[5] = G2[4] | (P2[4] & Cin);
+    assign C[6] = G2[5] | (P2[5] & Cin);
+    assign C[7] = G2[6] | (P2[6] & Cin);
+    assign C[8] = G3[7] | (P3[7] & Cin);
+
+    // Sum
+    assign Sum  = P0 ^ C[7:0];
+    assign Cout = C[8];
+
+endmodule
