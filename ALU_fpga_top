@@ -1,0 +1,35 @@
+module ALU_fpga_top(
+    input  [3:0] SW,        // FPGA switches (opcode)
+    output [7:0] LED,       // ALU result
+    output       Z,
+    output       S,
+    output       C,
+    output       V
+);
+
+    //Fixed operands
+    localparam [7:0] CONST_A = 8'd25;
+    localparam [7:0] CONST_B = 8'd10;
+
+    wire [7:0] alu_result;
+    wire zero_flag, sign_flag, carry_flag, overflow_flag;
+
+    //Instantiate ALU_top
+    ALU_top U_ALU (
+        .A(CONST_A),
+        .B(CONST_B),
+        .ALU_opcode(SW),
+        .ALU_result(alu_result),
+        .zero_flag(zero_flag),
+        .sign_flag(sign_flag),
+        .carry_flag(carry_flag),
+        .overflow_flag(overflow_flag)
+    );
+
+    assign LED = alu_result;
+    assign Z   = zero_flag;
+    assign S   = sign_flag;
+    assign C   = carry_flag;
+    assign V   = overflow_flag;
+
+endmodule
