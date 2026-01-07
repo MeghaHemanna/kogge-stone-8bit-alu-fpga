@@ -1,0 +1,54 @@
+`timescale 1ns / 1ps
+module arithmetic_unit(input [7:0] A,
+                       input [7:0] B,
+                       input [1:0] arith_sel,
+                       output [7:0] arith_result,
+                       output arith_carry,
+                       output arith_overflow
+                      );
+
+parameter ADD = 2'b00, SUB = 2'b01, INC = 2'b10, DEC = 2'b11;
+
+reg [7:0] adder_B;
+reg Cin;
+
+always @(*) begin
+    Cin = 1'b0;
+    case (arith_sel)
+        ADD: begin adder_B = B; 
+                    Cin = 1'b0; 
+             end
+        SUB: begin adder_B = ~B;          
+                    Cin = 1'b1; 
+             end
+        INC: begin adder_B = 8'b00000000; 
+                    Cin = 1'b1; 
+             end
+        DEC: begin adder_B = 8'b11111111; 
+                   Cin = 1'b1; 
+             end
+        default: begin adder_B = B;       
+                       Cin = 1'b0; 
+                 end
+    endcase
+end
+
+kogge_stone_adder KSA (
+    .A(A),
+    .B(adder_B),
+    .Cin(Cin),
+    .Sum(arith_result),
+    .Cout(arith_carry)
+);
+
+// Correct overflow logic
+assign arith_overflow =
+    (arith_sel == ADD) ? (~(A[7] ^ B[7]) & (arith_result[7] ^ A[7])) :
+    (arith_sel == SUB) ? ((A[7] ^ B[7]) & (arith_result[7] ^ A[7])) :
+    (arith_sel == INC) ? (~A[7] & arith_result[7]) :
+    (arith_sel == DEC) ? (A[7] & ~arith_result[7]) :
+    1'b0;
+
+
+
+endmodule
