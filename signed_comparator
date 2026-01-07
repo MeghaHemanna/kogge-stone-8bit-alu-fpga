@@ -1,0 +1,29 @@
+`timescale 1ns / 1ps
+module signed_comparator(
+    input  [7:0] A,
+    input  [7:0] B,
+    output       eq,
+    output       lt,
+    output       gt
+);
+
+    wire [7:0] diff;
+    wire cout;
+
+    kogge_stone_adder SUB (
+        .A(A),
+        .B(~B),
+        .Cin(1'b1),
+        .Sum(diff),
+        .Cout(cout)
+    );
+
+    wire zero     = (diff == 8'b0);
+    wire sign     = diff[7];
+    wire overflow = (A[7] ^ B[7]) & (diff[7] ^ A[7]);
+
+    assign eq = zero;
+    assign lt = sign ^ overflow;
+    assign gt = (~zero) & (~lt);
+
+endmodule
