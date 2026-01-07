@@ -1,0 +1,21 @@
+`timescale 1ns / 1ps
+module logic_unit(
+    input  [7:0] A,
+    input  [7:0] B,
+    input  [1:0] logic_sel,
+    output reg [7:0] logic_result
+);
+
+    parameter AND = 2'b00, OR = 2'b01, XOR = 2'b10, NOT = 2'b11;
+
+    always @(*) begin
+        case (logic_sel)
+            AND: logic_result = A & B;
+            OR : logic_result = A | B;
+            XOR: logic_result = A ^ B;
+            NOT: logic_result = ~A;
+            default: logic_result = A;
+        endcase
+    end
+
+endmodule
