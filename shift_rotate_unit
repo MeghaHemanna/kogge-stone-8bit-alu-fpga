@@ -1,0 +1,19 @@
+`timescale 1ns / 1ps
+module shift_rotate_unit(
+    input  [7:0] A,
+    input  [2:0] shift_sel,
+    output reg [7:0] shift_result
+);
+
+    always @(*) begin
+        case (shift_sel)
+            3'b000: shift_result = A << 1;          // LSL
+            3'b001: shift_result = A >> 1;          // LSR
+            3'b010: shift_result = {A[7], A[7:1]};  // ASR
+            3'b011: shift_result = {A[6:0], A[7]};  // ROL
+            3'b100: shift_result = {A[0], A[7:1]};  // ROR
+            default: shift_result = A;              // safe fallback
+        endcase
+    end
+
+endmodule
