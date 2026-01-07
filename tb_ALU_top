@@ -1,0 +1,76 @@
+`timescale 1ns / 1ps
+module tb_ALU_top;
+
+    reg  [7:0] A;
+    reg  [7:0] B;
+    reg  [3:0] ALU_opcode;
+
+    wire [7:0] ALU_result;
+    wire zero_flag;
+    wire sign_flag;
+    wire overflow_flag;
+    wire carry_flag;
+
+    //Instantiate DUT
+    ALU_top DUT (
+        .A(A),
+        .B(B),
+        .ALU_opcode(ALU_opcode),
+        .ALU_result(ALU_result),
+        .zero_flag(zero_flag),
+        .sign_flag(sign_flag),
+        .overflow_flag(overflow_flag),
+        .carry_flag(carry_flag)
+    );
+
+    // Display task
+    task show;
+        begin
+            $display("T=%0t | OP=%h | A=%0d (0x%h) | B=%0d (0x%h) | RES=%0d (0x%h) | Z=%b S=%b C=%b V=%b", $time, ALU_opcode, $signed(A), A, $signed(B), B, $signed(ALU_result), ALU_result,zero_flag, sign_flag, carry_flag, overflow_flag);
+        end
+    endtask
+
+    initial begin
+        $display(" TESTBENCH : FINAL 8-bit KOGGE–STONE ALU");
+
+        //ADD
+        A = 8'd15;  B = 8'd10;  ALU_opcode = 4'h0; #10; show();
+        A = 8'd120; B = 8'd20;  ALU_opcode = 4'h0; #10; show(); // overflow
+
+        //SUB
+        A = 8'd30; B = 8'd10; ALU_opcode = 4'h1; #10; show();
+        A = 8'd10; B = 8'd20; ALU_opcode = 4'h1; #10; show(); // negative
+
+        //INC 
+        A = 8'd10; B = 8'd0; ALU_opcode = 4'h2; #10; show();
+        A = 8'd127; ALU_opcode = 4'h2; #10; show(); // overflow
+
+        //DEC
+        A = 8'd10; ALU_opcode = 4'h3; #10; show();
+        A = 8'd128; ALU_opcode = 4'h3; #10; show(); // overflow (-128 → 127)
+
+        //LOGIC
+        A = 8'hAA; B = 8'h0F;
+        ALU_opcode = 4'h4; #10; show(); // AND
+        ALU_opcode = 4'h5; #10; show(); // OR
+        ALU_opcode = 4'h6; #10; show(); // XOR
+        ALU_opcode = 4'h7; #10; show(); // NOT
+
+        //SHIFT/ROTATE 
+        A = 8'b10110011;
+        ALU_opcode = 4'h8; #10; show(); // LS
+        ALU_opcode = 4'h9; #10; show(); // RS
+        ALU_opcode = 4'hA; #10; show(); // ARS
+        ALU_opcode = 4'hB; #10; show(); // ROL
+        ALU_opcode = 4'hC; #10; show(); // ROR
+
+        //COMPARATOR
+        A = 8'd20;  B = 8'd20; ALU_opcode = 4'hD; #10; show(); //equal
+        A = -8'd10; B = 8'd5; ALU_opcode = 4'hD; #10; show(); //smaller
+        A = 8'd50;  B = 8'd10; ALU_opcode = 4'hD; #10; show(); //greater
+
+        $display(" ALL TESTS COMPLETED SUCCESSFULLY ");
+        $stop;
+    end
+
+endmodule
